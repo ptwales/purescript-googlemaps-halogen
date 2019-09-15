@@ -20,6 +20,11 @@
   ],
   "description": "Halogen components for google api map",
   "main": "",
-  "license": "AGPL",
-  "homepage": ""
+  "license": "AGPL-3.0-or-later",
+  "homepage": "",
+  "keywords": [
+    "purescript",
+    "halogen",
+    "google-maps"
+  ]
 }
