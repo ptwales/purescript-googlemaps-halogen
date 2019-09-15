@@ -1,0 +1,19 @@
+{
+  "name": "purescript-halogen-googlemaps",
+  "version": "1.0.0",
+  "description": "Halogen components for google-maps",
+  "main": "index.js",
+  "author": "Philip Wales <me@ptwales.net>",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "postinstall": "bower install"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "bower": "^1.8.8",
+    "pulp": "^12.3.1",
+    "purescript": "^0.12.2",
+    "purescript-language-server": "^0.12.7",
+    "purty": "^4.5.1"
+  }
+}

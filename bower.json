@@ -1,0 +1,25 @@
+{
+  "name": "purescript-halogen-googlemaps",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "purescript-googlemaps": "relrod/purescript-googlemaps#0.0.1",
+    "purescript-halogen": "^5.0.0-rc.6"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^4.0.0"
+  },
+  "authors": [
+    "Philip Wales <me@ptwales.net>"
+  ],
+  "description": "Halogen components for google api map",
+  "main": "",
+  "license": "AGPL",
+  "homepage": ""
+}
