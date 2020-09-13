@@ -6,14 +6,12 @@
   "author": "Philip Wales <me@ptwales.net>",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "postinstall": "bower install"
+    "postinstall": "spago install"
   },
-  "dependencies": {},
   "devDependencies": {
-    "bower": "^1.8.8",
-    "pulp": "^12.3.1",
-    "purescript": "^0.12.2",
-    "purescript-language-server": "^0.12.7",
-    "purty": "^4.5.1"
+    "purescript": "^0.13.8",
+    "purescript-language-server": "^0.14.0",
+    "purty": "^6.2.0",
+    "spago": "^0.16.0"
   }
 }
