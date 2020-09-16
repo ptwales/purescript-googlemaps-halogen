@@ -1,0 +1,52 @@
+name: "Test on push"
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: cache yarn dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json') }}
+          path: node_modules
+
+      - name: install
+        run: yarn install
+
+      - name: cache purescript dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
+          path: |
+            .spago
+            output
+
+      - name: build the code
+        run: yarn spago build
+
+      # There's no tests yet!!!
+
+  # Automatically merge dependabot PRs if the tests pass and its not a major
+  # version change.
+  auto-merge:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'pull_request' && github.base_ref == 'master' && github.actor == 'dependabot[bot]'
+    steps:
+      - name: automerge dependabot PRs
+        uses: ahmadnassri/action-dependabot-auto-merge@v2
+        with:
+          github-token: ${{ secrets.mytoken }}
