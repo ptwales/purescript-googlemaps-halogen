@@ -1,6 +1,11 @@
 module GMaps.ApiMap
-  ( Output
+  ( Input
+  , MarkerInput
+  , Output
+  , PolygonInput
+  , PolylineInput
   , Query
+  , Slot
   , component
   , anchorId
   ) where
@@ -98,14 +103,14 @@ component =
     { initialState
     , render
     , eval:
-      H.mkEval
-        $ H.defaultEval
-            { handleAction = handleAction
-            , handleQuery = handleQuery
-            , receive = Just <<< Update
-            , initialize = Just Init
-            , finalize = Nothing
-            }
+        H.mkEval
+          $ H.defaultEval
+              { handleAction = handleAction
+              , handleQuery = handleQuery
+              , receive = Just <<< Update
+              , initialize = Just Init
+              , finalize = Nothing
+              }
     }
 
 initialState :: Input -> State
