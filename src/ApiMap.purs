@@ -1,10 +1,10 @@
 module GMaps.ApiMap
   ( Input
   , MarkerInput
-  , Output
+  , Output(..)
   , PolygonInput
   , PolylineInput
-  , Query
+  , Query(..)
   , Slot
   , component
   , anchorId

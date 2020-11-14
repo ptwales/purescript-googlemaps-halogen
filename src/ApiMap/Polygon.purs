@@ -1,7 +1,7 @@
 module GMaps.ApiMap.Polygon
   ( Key
-  , Output
-  , Query
+  , Output(..)
+  , Query(..)
   , Slot
   , component
   ) where
@@ -58,14 +58,14 @@ component =
     { initialState
     , render: const render
     , eval:
-      H.mkEval
-        $ H.defaultEval
-            { handleAction = handleAction
-            , handleQuery = handleQuery
-            , receive = Just <<< Update
-            , initialize = Just Load
-            , finalize = Just Remove
-            }
+        H.mkEval
+          $ H.defaultEval
+              { handleAction = handleAction
+              , handleQuery = handleQuery
+              , receive = Just <<< Update
+              , initialize = Just Load
+              , finalize = Just Remove
+              }
     }
 
 initialState :: Input -> State

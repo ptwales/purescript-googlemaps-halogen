@@ -1,5 +1,7 @@
 module GMaps.ApiMap.InfoWindow
-  ( Output(..)
+  ( Input
+  , Output(..)
+  , Parent
   , Slot
   , component
   ) where
@@ -50,13 +52,13 @@ component =
   H.mkComponent
     { initialState
     , eval:
-      H.mkEval
-        $ H.defaultEval
-            { handleAction = handleAction
-            , initialize = Just Load
-            , finalize = Just Remove
-            , receive = Just <<< Update
-            }
+        H.mkEval
+          $ H.defaultEval
+              { handleAction = handleAction
+              , initialize = Just Load
+              , finalize = Just Remove
+              , receive = Just <<< Update
+              }
     , render: const render
     }
 

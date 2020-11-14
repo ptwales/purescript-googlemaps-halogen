@@ -1,6 +1,6 @@
 module GMaps.ApiMap.Marker
   ( Key
-  , Output
+  , Output(..)
   , Slot
   , component
   ) where
@@ -68,13 +68,13 @@ component =
     { initialState
     , render
     , eval:
-      H.mkEval
-        $ H.defaultEval
-            { handleAction = handleAction
-            , receive = Just <<< Update
-            , initialize = Just Load
-            , finalize = Just Remove
-            }
+        H.mkEval
+          $ H.defaultEval
+              { handleAction = handleAction
+              , receive = Just <<< Update
+              , initialize = Just Load
+              , finalize = Just Remove
+              }
     }
 
 initialState :: Input -> State
