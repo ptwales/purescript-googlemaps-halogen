@@ -32,7 +32,7 @@ import GMaps.Marker.MarkerEvent (MarkerEvent(..)) as GM
 
 data Action = ApiMap GM.Output
 
-data State = {}
+type State = {}
 
 type ChildSlots = ( googleMap :: ApiMap.Slot Unit )
 
@@ -59,7 +59,6 @@ handleAction = case _ of
     ApiMap.MarkerMessage key (Marker.Message (GM.MarkerEvent GM.Click mouseEvent -> do
      -- ...
      pure unit
-
 
 ```
 [ffi]: https://github.com/ptwales/purescript-googlemaps
