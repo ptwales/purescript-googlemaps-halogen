@@ -19,5 +19,5 @@ workspace:
         - read
         - spec-mocha
         - web-html
-      git: https://github.com/ptwales/purescript-googlemaps.git
-      ref: 67d79da5b616302f2e2565ebcabc332258e6d44e
+      git: 'https://github.com/ptwales/purescript-googlemaps.git'
+      ref: 'v1.1.0'
