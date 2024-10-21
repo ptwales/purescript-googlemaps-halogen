@@ -1,0 +1,23 @@
+package:
+  dependencies:
+    - console
+    - effect
+    - googlemaps
+    - halogen
+    - psci-support
+  name: halogen-googlemaps
+workspace:
+  packageSet:
+    registry: 60.5.0
+  extraPackages:
+    googlemaps:
+      dependencies:
+        - debug
+        - foreign
+        - functions
+        - psci-support
+        - read
+        - spec-mocha
+        - web-html
+      git: https://github.com/ptwales/purescript-googlemaps.git
+      ref: 67d79da5b616302f2e2565ebcabc332258e6d44e
