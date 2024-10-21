@@ -17,14 +17,14 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: cache yarn dependencies
+      - name: cache npm dependencies
         uses: actions/cache@v2
         with:
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}
           path: node_modules
 
       - name: install
-        run: yarn install
+        run: npm install
 
       - name: cache purescript dependencies
         uses: actions/cache@v2
@@ -35,7 +35,7 @@ jobs:
             output
 
       - name: build the code
-        run: yarn spago build
+        run: npx spago build
 
       # There's no tests yet!!!
 
