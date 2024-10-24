@@ -13,7 +13,6 @@ module GMaps.ApiMap
 import Prelude
 import Data.Array (fromFoldable, singleton) as Array
 import Data.Maybe (Maybe(..))
-import Data.Symbol (SProxy(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import GMaps.ApiMap.Marker as Marker
@@ -28,37 +27,38 @@ import GMaps.Marker (MarkerOptions) as GM
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
+import Type.Proxy (Proxy(..))
 
-type MarkerInput
-  = { key :: Marker.Key
-    , options :: GM.MarkerOptions
-    , infoWindow :: Maybe GM.InfoWindowOptions
-    }
+type MarkerInput =
+  { key :: Marker.Key
+  , options :: GM.MarkerOptions
+  , infoWindow :: Maybe GM.InfoWindowOptions
+  }
 
-type PolygonInput
-  = { key :: Polygon.Key
-    , options :: GM.PolygonOptions
-    }
+type PolygonInput =
+  { key :: Polygon.Key
+  , options :: GM.PolygonOptions
+  }
 
-type PolylineInput
-  = { key :: Polyline.Key
-    , options :: GM.PolylineOptions
-    }
+type PolylineInput =
+  { key :: Polyline.Key
+  , options :: GM.PolylineOptions
+  }
 
-type State
-  = { gmap :: Maybe GM.Map
-    , mapOptions :: GM.MapOptions
-    , markers :: Array MarkerInput
-    , polygons :: Array PolygonInput
-    , polylines :: Array PolylineInput
-    }
+type State =
+  { gmap :: Maybe GM.Map
+  , mapOptions :: GM.MapOptions
+  , markers :: Array MarkerInput
+  , polygons :: Array PolygonInput
+  , polylines :: Array PolylineInput
+  }
 
-type Input
-  = { mapOptions :: GM.MapOptions
-    , markers :: Array MarkerInput
-    , polygons :: Array PolygonInput
-    , polylines :: Array PolylineInput
-    }
+type Input =
+  { mapOptions :: GM.MapOptions
+  , markers :: Array MarkerInput
+  , polygons :: Array PolygonInput
+  , polylines :: Array PolylineInput
+  }
 
 data Output
   = MarkerMessage Marker.Key Marker.Output
@@ -76,28 +76,26 @@ data Query a
   = PolygonQuery Polygon.Key (Polygon.Query a)
   | PolylineQuery Polyline.Key (Polyline.Query a)
 
-type Slot p
-  = H.Slot Query Output p
+type Slot p = H.Slot Query Output p
 
-type ChildSlots
-  = ( marker :: Marker.Slot
-    , polygon :: Polygon.Slot
-    , polyline :: Polyline.Slot
-    )
+type ChildSlots =
+  ( marker :: Marker.Slot
+  , polygon :: Polygon.Slot
+  , polyline :: Polyline.Slot
+  )
 
-_marker :: SProxy "marker"
-_marker = SProxy
+_marker :: Proxy "marker"
+_marker = Proxy
 
-_polygon :: SProxy "polygon"
-_polygon = SProxy
+_polygon :: Proxy "polygon"
+_polygon = Proxy
 
-_polyline :: SProxy "polyline"
-_polyline = SProxy
+_polyline :: Proxy "polyline"
+_polyline = Proxy
 
-type Render m
-  = H.ComponentHTML Action ChildSlots m
+type Render m = H.ComponentHTML Action ChildSlots m
 
-component :: forall m. MonadAff m => H.Component HH.HTML Query Input Output m
+component :: forall m. MonadAff m => H.Component Query Input Output m
 component =
   H.mkComponent
     { initialState
@@ -131,13 +129,13 @@ placeHolder = HH.text "ERROR"
 anchorHTML :: HH.PlainHTML -> HH.PlainHTML
 anchorHTML = HH.div props <<< Array.singleton
   where
-  props = [ HP.id_ anchorId, HP.class_ (HH.ClassName "google-map") ]
+  props = [ HP.id anchorId, HP.class_ (HH.ClassName "google-map") ]
 
 render :: forall m. MonadAff m => State -> Render m
 render state =
   HH.div_
     $ [ HH.fromPlainHTML (anchorHTML placeHolder) ]
-    <> (Array.fromFoldable state.gmap >>= renderChildren state)
+        <> (Array.fromFoldable state.gmap >>= renderChildren state)
 
 renderChildren :: forall m. MonadAff m => State -> GM.Map -> Array (Render m)
 renderChildren { markers, polygons, polylines } gmap =
@@ -150,7 +148,7 @@ renderMarker parent { key, options, infoWindow } =
   let
     input = { options: options { map = Just parent }, infoWindow, parent }
 
-    listen message = Just (MarkerEvent key message)
+    listen = MarkerEvent key
   in
     HH.slot _marker key Marker.component input listen
 
@@ -159,7 +157,7 @@ renderPolygon parent { key, options } =
   let
     input = { options: options { map = Just parent }, parent }
 
-    listen message = Just (PolygonEvent key message)
+    listen = PolygonEvent key
   in
     HH.slot _polygon key Polygon.component input listen
 
@@ -168,7 +166,7 @@ renderPolyline parent { key, options } =
   let
     input = { options: options { map = Just parent }, parent }
 
-    listen message = Just (PolylineEvent key message)
+    listen = PolylineEvent key
   in
     HH.slot _polyline key Polyline.component input listen
 

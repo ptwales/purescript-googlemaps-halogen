@@ -10,7 +10,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Traversable (for, for_)
 import Effect.Aff.Class (class MonadAff)
-import GMaps.ApiMap.Event (eventSource)
+import GMaps.ApiMap.Event (listenToAll)
 import GMaps.Draw.Polygon (Polygon, PolygonOptions, deletePolygon, newPolygon, remove, setOptions) as GM
 import GMaps.Draw.Polygon.PolygonEvent (PolygonEvent(..)) as GM
 import GMaps.Geometry.Poly (containsLocation, isOnEdgeOfPolygon) as GM
@@ -20,24 +20,23 @@ import GMaps.MVC.PolyMouseEvent (PolyMouseEvent) as GM
 import GMaps.Map (Map) as GM
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Subscription as HS
 
-type Key
-  = String
+type Key = String
 
-type State
-  = { options :: GM.PolygonOptions
-    , polygon :: Maybe GM.Polygon
-    , parent :: GM.Map
-    , subscriptions :: Array H.SubscriptionId
-    }
+type State =
+  { options :: GM.PolygonOptions
+  , polygon :: Maybe GM.Polygon
+  , parent :: GM.Map
+  , subscription :: Maybe H.SubscriptionId
+  }
 
-type Input
-  = { options :: GM.PolygonOptions
-    , parent :: GM.Map
-    }
+type Input =
+  { options :: GM.PolygonOptions
+  , parent :: GM.Map
+  }
 
-data Output
-  = Message GM.PolygonEvent GM.PolyMouseEvent
+data Output = Message GM.PolygonEvent GM.PolyMouseEvent
 
 data Query a
   = Contains LatLng (Boolean -> a)
@@ -49,10 +48,9 @@ data Action
   | Remove
   | Event GM.PolygonEvent GM.PolyMouseEvent
 
-type Slot
-  = H.Slot Query Output Key
+type Slot = H.Slot Query Output Key
 
-component :: forall m. MonadAff m => H.Component HH.HTML Query Input Output m
+component :: forall m. MonadAff m => H.Component Query Input Output m
 component =
   H.mkComponent
     { initialState
@@ -73,7 +71,7 @@ initialState { options, parent } =
   { options
   , parent
   , polygon: Nothing
-  , subscriptions: []
+  , subscription: Nothing
   }
 
 render :: forall act m. H.ComponentHTML act () m
@@ -88,12 +86,14 @@ handleAction = case _ of
 
       options = state.options { map = Just parent }
     created <- H.liftEffect (GM.newPolygon options)
-    sids <- for (eventSource created Event <$> events) H.subscribe
+    { emitter, listener } <- H.liftEffect HS.create
+    sid <- H.subscribe emitter
+    H.liftEffect $ listenToAll created listener Event events
     H.put
       $ state
           { options = options
           , polygon = Just created
-          , subscriptions = sids
+          , subscription = Just sid
           }
   Update { options, parent } -> do
     state <- H.get
@@ -123,7 +123,8 @@ handleAction = case _ of
 events :: Array GM.PolygonEvent
 events =
   GM.PolygonEvent
-    <$> [ GM.Click
+    <$>
+      [ GM.Click
       , GM.DblClick
       , GM.Drag
       , GM.DragEnd

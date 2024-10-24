@@ -11,7 +11,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Traversable (for, for_)
 import Effect.Aff.Class (class MonadAff)
-import GMaps.ApiMap.Event (eventSource)
+import GMaps.ApiMap.Event (listenToAll)
 import GMaps.Draw.Polyline (Polyline, PolylineOptions, deletePolyline, setOptions, newPolyline, remove) as GM
 import GMaps.Draw.Polyline.PolylineEvent (PolylineEvent(..)) as GM
 import GMaps.Geometry.Poly (isOnEdgeOfPolyline) as GM
@@ -21,27 +21,25 @@ import GMaps.MVC.PolyMouseEvent (PolyMouseEvent) as GM
 import GMaps.Map (Map) as GM
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Subscription as HS
 
-type Key
-  = String
+type Key = String
 
-type State
-  = { options :: GM.PolylineOptions
-    , polyline :: Maybe GM.Polyline
-    , parent :: GM.Map
-    , subscriptions :: Array H.SubscriptionId
-    }
+type State =
+  { options :: GM.PolylineOptions
+  , polyline :: Maybe GM.Polyline
+  , parent :: GM.Map
+  , subscription :: Maybe H.SubscriptionId
+  }
 
-type Input
-  = { options :: GM.PolylineOptions
-    , parent :: GM.Map
-    }
+type Input =
+  { options :: GM.PolylineOptions
+  , parent :: GM.Map
+  }
 
-data Output
-  = Message GM.PolylineEvent GM.PolyMouseEvent
+data Output = Message GM.PolylineEvent GM.PolyMouseEvent
 
-data Query a
-  = IsOnEdge LatLng (Boolean -> a)
+data Query a = IsOnEdge LatLng (Boolean -> a)
 
 data Action
   = Load
@@ -49,10 +47,9 @@ data Action
   | Remove
   | Event GM.PolylineEvent GM.PolyMouseEvent
 
-type Slot
-  = H.Slot Query Output Key
+type Slot = H.Slot Query Output Key
 
-component :: forall m. MonadAff m => H.Component HH.HTML Query Input Output m
+component :: forall m. MonadAff m => H.Component Query Input Output m
 component =
   H.mkComponent
     { initialState
@@ -73,7 +70,7 @@ initialState { options, parent } =
   { options
   , parent
   , polyline: Nothing
-  , subscriptions: []
+  , subscription: Nothing
   }
 
 render :: forall act m. H.ComponentHTML act () m
@@ -88,12 +85,14 @@ handleAction = case _ of
 
       options = state.options { map = Just parent }
     created <- H.liftEffect (GM.newPolyline options)
-    sids <- for (eventSource created Event <$> events) H.subscribe
+    { emitter, listener } <- H.liftEffect HS.create
+    sid <- H.subscribe emitter
+    H.liftEffect $ listenToAll created listener Event events
     H.put
       $ state
           { options = options
           , polyline = Just created
-          , subscriptions = sids
+          , subscription = Just sid
           }
   Update { options, parent } -> do
     state <- H.get
@@ -111,6 +110,7 @@ handleAction = case _ of
     let
       options = state.options { map = Nothing }
     removed <- H.liftEffect (for state.polyline GM.remove)
+    for_ state.subscription H.unsubscribe
     H.liftEffect (for_ removed GM.deletePolyline)
     H.put
       $ state
@@ -123,7 +123,8 @@ handleAction = case _ of
 events :: Array GM.PolylineEvent
 events =
   GM.PolylineEvent
-    <$> [ GM.Click
+    <$>
+      [ GM.Click
       , GM.DblClick
       , GM.Drag
       , GM.DragEnd
