@@ -6,12 +6,12 @@ module GMaps.ApiMap.Marker
   ) where
 
 import Prelude
+
 import Control.Monad.State.Class (class MonadState)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Symbol (SProxy(..))
 import Data.Traversable (for, for_)
 import Effect.Aff.Class (class MonadAff)
-import GMaps.ApiMap.Event (eventSource)
+import GMaps.ApiMap.Event (listenToAll)
 import GMaps.ApiMap.InfoWindow as InfoWindow
 import GMaps.InfoWindow (InfoWindowOptions) as GM
 import GMaps.InfoWindow.InfoWindowEvent (InfoWindowEvent(..)) as InfoWindowEvent
@@ -23,23 +23,24 @@ import GMaps.Marker (Marker, MarkerOptions, deleteMarker, removeMarker, newMarke
 import GMaps.Marker.MarkerEvent (MarkerEvent(..)) as GM
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Subscription as HS
+import Type.Proxy (Proxy(..))
 
-type Key
-  = String
+type Key = String
 
-type State
-  = { options :: GM.MarkerOptions
-    , infoWindow :: Maybe GM.InfoWindowOptions
-    , marker :: Maybe GM.Marker
-    , parent :: GM.Map
-    , subscriptions :: Array H.SubscriptionId
-    }
+type State =
+  { options :: GM.MarkerOptions
+  , infoWindow :: Maybe GM.InfoWindowOptions
+  , marker :: Maybe GM.Marker
+  , parent :: GM.Map
+  , subscription :: Maybe H.SubscriptionId
+  }
 
-type Input
-  = { options :: GM.MarkerOptions
-    , infoWindow :: Maybe GM.InfoWindowOptions
-    , parent :: GM.Map
-    }
+type Input =
+  { options :: GM.MarkerOptions
+  , infoWindow :: Maybe GM.InfoWindowOptions
+  , parent :: GM.Map
+  }
 
 data Output
   = Message GM.MarkerEvent GM.MouseEvent
@@ -52,17 +53,16 @@ data Action
   | Event GM.MarkerEvent GM.MouseEvent
   | InfoWindowEvent GM.InfoWindowEvent
 
-type Slot
-  = forall q. H.Slot q Output Key
+type Slot = forall q. H.Slot q Output Key
 
-type ChildSlots
-  = ( infoWindow :: InfoWindow.Slot Unit
-    )
+type ChildSlots =
+  ( infoWindow :: InfoWindow.Slot Unit
+  )
 
-_infoWindow :: SProxy "infoWindow"
-_infoWindow = SProxy
+_infoWindow :: Proxy "infoWindow"
+_infoWindow = Proxy
 
-component :: forall f m. MonadAff m => H.Component HH.HTML f Input Output m
+component :: forall f m. MonadAff m => H.Component f Input Output m
 component =
   H.mkComponent
     { initialState
@@ -83,11 +83,10 @@ initialState { options, infoWindow, parent } =
   , infoWindow
   , parent
   , marker: Nothing
-  , subscriptions: []
+  , subscription: Nothing
   }
 
-type Render m
-  = H.ComponentHTML Action ChildSlots m
+type Render m = H.ComponentHTML Action ChildSlots m
 
 render :: forall m. MonadAff m => State -> Render m
 render state =
@@ -104,7 +103,7 @@ renderInfoWindow gmap marker options =
 
     input = { parent, options }
 
-    listen (InfoWindow.Message mvcEvent) = Just (InfoWindowEvent mvcEvent)
+    listen (InfoWindow.Message mvcEvent) = InfoWindowEvent mvcEvent
   in
     HH.slot _infoWindow unit InfoWindow.component input listen
 
@@ -115,12 +114,14 @@ handleAction = case _ of
     let
       options = state.options { map = Just state.parent }
     created <- H.liftEffect (GM.newMarker options)
-    sids <- for (eventSource created Event <$> events) H.subscribe
+    { emitter, listener } <- H.liftEffect HS.create
+    sid <- H.subscribe emitter
+    H.liftEffect $ listenToAll created listener Event events
     H.put
       $ state
           { marker = Just created
           , options = options
-          , subscriptions = sids
+          , subscription = Just sid
           }
   Update { options, infoWindow, parent } -> do
     state <- H.get
@@ -155,7 +156,8 @@ evalInfoWindow = case _ of
 events :: Array GM.MarkerEvent
 events =
   GM.MarkerEvent
-    <$> [ GM.Click
+    <$>
+      [ GM.Click
       , GM.DblClick
       , GM.Drag
       , GM.DragEnd

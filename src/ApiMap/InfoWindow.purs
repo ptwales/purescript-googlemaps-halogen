@@ -10,33 +10,33 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Traversable (for, for_)
 import Effect.Aff.Class (class MonadAff)
-import GMaps.ApiMap.Event (eventSource)
+import GMaps.ApiMap.Event (listenToAll)
 import GMaps.InfoWindow (InfoWindow, InfoWindowOptions, closeInfoWindow, deleteInfoWindow, newInfoWindow, openInfoWindow, setOptions) as GM
 import GMaps.InfoWindow.InfoWindowEvent (InfoWindowEvent(..)) as GM
 import GMaps.Map (Map) as GM
 import GMaps.Marker (Marker) as GM
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Subscription as HS
 
-type Parent
-  = { gmap :: GM.Map
-    , marker :: GM.Marker
-    }
+type Parent =
+  { gmap :: GM.Map
+  , marker :: GM.Marker
+  }
 
-type State
-  = { options :: GM.InfoWindowOptions
-    , parent :: Parent
-    , infoWindow :: Maybe GM.InfoWindow
-    , subscriptions :: Array H.SubscriptionId
-    }
+type State =
+  { options :: GM.InfoWindowOptions
+  , parent :: Parent
+  , infoWindow :: Maybe GM.InfoWindow
+  , subscription :: Maybe H.SubscriptionId
+  }
 
-type Input
-  = { options :: GM.InfoWindowOptions
-    , parent :: Parent
-    }
+type Input =
+  { options :: GM.InfoWindowOptions
+  , parent :: Parent
+  }
 
-data Output
-  = Message GM.InfoWindowEvent
+data Output = Message GM.InfoWindowEvent
 
 data Action
   = Load
@@ -44,10 +44,9 @@ data Action
   | Event GM.InfoWindowEvent Unit
   | Remove
 
-type Slot p
-  = forall q. H.Slot q Output p
+type Slot p = forall q. H.Slot q Output p
 
-component :: forall f m. MonadAff m => H.Component HH.HTML f Input Output m
+component :: forall f m. MonadAff m => H.Component f Input Output m
 component =
   H.mkComponent
     { initialState
@@ -67,7 +66,7 @@ initialState { options, parent } =
   { options
   , parent
   , infoWindow: Nothing
-  , subscriptions: []
+  , subscription: Nothing
   }
 
 render :: forall act m. H.ComponentHTML act () m
@@ -81,11 +80,13 @@ handleAction = case _ of
       { options, parent: { gmap, marker } } = state
     created <- H.liftEffect (GM.newInfoWindow options)
     opened <- H.liftEffect (GM.openInfoWindow created gmap marker)
-    sids <- for (eventSource opened Event <$> events) H.subscribe
+    { emitter, listener } <- H.liftEffect HS.create
+    sid <- H.subscribe emitter
+    H.liftEffect $ listenToAll created listener Event events
     H.put
       $ state
           { infoWindow = Just opened
-          , subscriptions = sids
+          , subscription = Just sid
           }
   Update { options, parent } -> do
     state <- H.get
@@ -101,7 +102,7 @@ handleAction = case _ of
   Remove -> do
     state <- H.get
     closed <- H.liftEffect (for state.infoWindow GM.closeInfoWindow)
-    for_ state.subscriptions H.unsubscribe
+    for_ state.subscription H.unsubscribe
     H.liftEffect (for_ closed GM.deleteInfoWindow)
     H.put (state { infoWindow = Nothing })
   Event mvcEvent _ -> do

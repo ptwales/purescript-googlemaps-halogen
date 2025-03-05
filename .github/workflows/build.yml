@@ -3,11 +3,11 @@ name: "Test on push"
 on:
   push:
     branches:
-      - master
+      - main
       - develop
   pull_request:
     branches:
-      - master
+      - main
       - develop
 
 jobs:
@@ -17,17 +17,17 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: cache yarn dependencies
-        uses: actions/cache@v2
+      - name: cache npm dependencies
+        uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}
           path: node_modules
 
       - name: install
-        run: yarn install
+        run: npm install
 
       - name: cache purescript dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
           path: |
@@ -35,7 +35,7 @@ jobs:
             output
 
       - name: build the code
-        run: yarn spago build
+        run: npx spago build
 
       # There's no tests yet!!!
 
@@ -44,7 +44,7 @@ jobs:
   auto-merge:
     runs-on: ubuntu-latest
     needs: [build]
-    if: github.event_name == 'pull_request' && github.base_ref == 'master' && github.actor == 'dependabot[bot]'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.actor == 'dependabot[bot]'
     steps:
       - name: automerge dependabot PRs
         uses: ahmadnassri/action-dependabot-auto-merge@v2
