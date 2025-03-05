@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: cache npm dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}
           path: node_modules
@@ -27,7 +27,7 @@ jobs:
         run: npm install
 
       - name: cache purescript dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
           path: |
