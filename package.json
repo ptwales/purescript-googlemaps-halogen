@@ -8,7 +8,7 @@
   "devDependencies": {
     "purescript": "^0.15.15",
     "purs-tidy": "^0.11.0",
-    "spago": "^0.93.40"
+    "spago": "^0.93.44"
   },
   "dependencies": {}
 }
